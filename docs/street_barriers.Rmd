@@ -1,0 +1,157 @@
+---
+title: "street barriers"
+author: "Emily McCarthy"
+date: '(`r format(Sys.time(), "%B %d, %Y")`)'
+output: 
+  github_document: default
+  html_notebook: default 
+---
+
+## Introduction
+This notebook...
+
+## Dependencies
+This notebook requires...
+
+```{r load-packages}
+# tidyverse packages
+library(dplyr)
+library(stringr)
+library(tibble)
+library(fuzzyjoin)
+library(readr)
+library(tidyr)
+
+# other packages
+library(here)
+library(sf)
+library(janitor)
+library(naniar)
+```
+
+## Load Data
+This notebook requires these data:
+
+```{r load-data}
+RAW_ADDRESS <- st_read(here("data", "pargeocd", "pargeocd.shp"), stringsAsFactors = FALSE)
+CENSUS <- st_read(here("data", "tl_2018_29510_addrfeat", "tl_2018_29510_addrfeat.shp"), stringsAsFactors = FALSE)
+```
+
+## Part 1
+I will first attempt to find missing varibales in the census data. 
+
+```{r p1-q1}
+miss_var_summary(CENSUS)
+```
+
+I will now combine the two columns of address data in `RAW_ADDRESSES` to include streetname and street type in the same column. 
+
+```{r}
+RAW_ADDRESS %>%
+  mutate(COMPLETESTREET = str_c(STREETNAME, STREETTYPE, sep = " ")) -> ADDRESSES
+
+ADDRESSES %>%
+  select(HANDLE, HOUSENUM, UNITNUM, COMPLETESTREET, ZIP, PARCELID, CITYBLOCK, PARCEL, ADDRRECNUM ) -> ADDRESSES
+```
+
+I will now determine if ADDRECNUM is a unique column variable. 
+
+I will now rename one of the variables in `CENSUS_ADDRESS`
+
+```{r}
+CENSUS %>%
+  rename(
+    COMPLETESTREET = FULLNAME
+  ) -> CENSUS
+```
+
+I will now select only necessary columns
+
+```{r}
+CENSUS %>%
+mutate(toupper(CENSUS$COMPLETESTREET)) -> CENSUS 
+```
+
+Reformatting data tables
+
+```{r}
+CENSUS %>%
+  select(-COMPLETESTREET) %>%
+  rename(COMPLETESTREET = `toupper(CENSUS$COMPLETESTREET)`) -> CENSUS_CLEAN
+```
+
+
+I will now join these tables. 
+First I will set geometry to NULL
+
+```{r}
+#st_geometry(CENSUS_CLEAN) <- NULL
+
+# FULL_JOINED_ADDRESS <- drop_na(JOINED_ADDRESS)
+CENSUS_CLEAN %>%
+  mutate(LFROMHN = ifelse(is.na(LFROMHN) == TRUE, 0, LFROMHN)) %>%
+  mutate(LTOHN = ifelse(is.na(LTOHN) == TRUE, 0, LTOHN)) %>%
+  mutate(RFROMHN = ifelse(is.na(RFROMHN) == TRUE, 0, RFROMHN)) %>%
+  mutate(RTOHN= ifelse(is.na(RTOHN) == TRUE, 0, RTOHN))%>%
+  select(-LFROMTYP, -LTOTYP, -RFROMTYP, -RTOTYP, -PARITYL, -PARITYR, -ZIPL, -ZIPR, -ARIDL, -ARIDR, -PLUS4L, -PLUS4R, -EDGE_MTFCC, -ROAD_MTFCC, -OFFSETL, -OFFSETR) -> Census_drop
+
+```
+
+```{r}
+ADDRESSES %>%
+ filter(is.na(UNITNUM) == TRUE) %>%
+  mutate(HOUSENUM = as.numeric(HOUSENUM)) -> ADDRESSES
+Census_drop %>%
+  mutate(LFROMHN = as.numeric(LFROMHN)) %>%
+  mutate(RTOHN = as.numeric(RTOHN)) -> Census_drop
+```
+
+```{r}
+JOINED_ADDRESS <- fuzzy_left_join(ADDRESSES, Census_drop,
+                                  by = (c(
+                                 "LFROMHN" = "HOUSENUM",
+                                  "LTOHN" = "HOUSENUM",
+                                  "COMPLETESTREET" = "COMPLETESTREET")),
+                                  match_fun = list(`<=`, `>=`, `==`))
+```
+
+```{r}
+JOINED_LEFT <- fuzzy_left_join(Census_drop, ADDRESSES,
+                                  by = as.numeric(c(
+                                    "LFROMHN" = "HOUSENUM",
+                                    "LTOHN" = "HOUSENUM",
+                                    "COMPLETESTREET" = "COMPLETESTREET")),
+                                  match_fun = list(`<=`, `>=`, `==`))
+```
+
+by = c(
+                        "number" = "rightLow",
+                        "number" = "leftHigh",
+                        "street" = "street"
+                    ),
+                    match_fun = list(`>=`, `<=`, `==`) )
+
+
+```{r}
+# JOINED_ADDRESS <- select(JOINED_ADDRESS, -PLUS4L, -PLUS4R)
+JOINED_ADDRESS <- select(JOINED_ADDRESS, -LFROMTYP, -LTOTYP, -RFROMTYP, -RTOTYP, -PARITYL, -PARITYR)
+
+```
+
+```{r}
+slice(Census_drop, 1:150) -> slice
+```
+
+```{r}
+slice(ADDRESSES, 1:150) -> address_slice
+```
+
+```{r}
+JOINED_LEFT_slice <- fuzzy_left_join(ADDRESSES, slice,
+                                  by = c(
+                                    "HOUSENUM" = "LFROMHN",
+                                    "HOUSENUM" = "LTOHN",
+                                    "COMPLETESTREET" = "COMPLETESTREET"),
+                                  match_fun = list(`>=`, `<=`, `==`))
+```
+

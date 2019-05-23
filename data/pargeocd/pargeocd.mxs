@@ -1,0 +1,96 @@
+/3.2
+(ODB.1
+	FirstRootClassName:	"MSrc"
+	Roots:	2
+	Version:	32
+)
+
+(MSrc.2
+	MTab:	3
+	MaxScore:	0x8ec
+	DefOffset:	-1.00000000000000
+)
+
+(MTab.3
+	Name:	"US Single House"
+	IndexFlag:	"1239645984"
+	RecordLength:	52
+	MFieldList:	4
+	MFieldList:	5
+	MFieldList:	6
+	MFieldList:	7
+	MFieldList:	8
+	MIndexList:	9
+	MIndexList:	10
+	MQueryList:	11
+	MQueryList:	12
+	StanRules:	"us_addr.stn"
+	MatchRules:	"us_snum2.mat"
+)
+
+(MField.4
+	FieldName:	"HouseNum"
+	StartPos:	1
+	Width:	10
+	Required:	1
+	Justification:	2
+	VTabFieldName:	"Housenum"
+)
+
+(MField.5
+	FieldName:	"PreDir"
+	StartPos:	11
+	Width:	2
+	Justification:	1
+	VTabFieldName:	"Predir"
+)
+
+(MField.6
+	FieldName:	"StreetName"
+	StartPos:	17
+	Width:	28
+	Required:	1
+	Justification:	1
+	VTabFieldName:	"Streetname"
+)
+
+(MField.7
+	FieldName:	"StreetType"
+	StartPos:	45
+	Width:	6
+	Justification:	1
+	VTabFieldName:	"Streettype"
+)
+
+(MField.8
+	FieldName:	"SufDir"
+	StartPos:	51
+	Width:	2
+	Justification:	1
+	VTabFieldName:	"Sufdir"
+)
+
+(MIndex.9
+	IndexName:	"I1"
+	IndexType:	7
+	MatchFields:	6
+)
+
+(MIndex.10
+	IndexName:	"I2"
+	IndexType:	6
+	MatchFields:	4
+)
+
+(MQuery.11
+	Query:	"I1 = \"%SN%\"?"
+	FieldName:	"SN"
+	Status:	1
+)
+
+(MQuery.12
+	Query:	"I2 = %HN%"
+	FieldName:	"HN"
+	Status:	1
+)
+
